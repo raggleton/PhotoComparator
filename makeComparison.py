@@ -93,7 +93,7 @@ def do_image_comparison_PIL(images, box, output, info=None):
                     # FocalLength (160, 10)
 
                 # font size proportional to canvas size
-                font = PIL.ImageFont.truetype("/Library/Fonts/Arial.ttf", int(crop_h/22))
+                font = PIL.ImageFont.truetype("/Library/Fonts/GillSans.ttc", int(crop_h/22))
                 draw = PIL.ImageDraw.Draw(region)
 
                 # Actually add texts
