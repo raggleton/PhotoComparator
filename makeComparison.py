@@ -119,6 +119,8 @@ def do_image_comparison_PIL(images, box, output, info=None):
                         text = exif['LensModel']
                     elif this_info == "datetime":
                         text = exif['DateTime']
+                    elif this_info == "filename":
+                        text = im_filename
 
                     # Make spacing, border size scale to canvas height
                     text_start_h = 10
@@ -191,7 +193,7 @@ if __name__ == "__main__":
                         help="Output file")
     parser.add_argument("-info",
                         nargs="*",
-                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime"],
+                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime", 'filename'],
                         help="info to put on each image")
     args = parser.parse_args()
     print(args)
