@@ -22,7 +22,7 @@ import PIL.Image
 import PIL.ImageFont
 import PIL.ImageDraw
 
-from wand.image import Image
+# from wand.image import Image
 
 
 def exif_tuple_to_float(x):
@@ -193,7 +193,7 @@ if __name__ == "__main__":
                         help="Output file")
     parser.add_argument("-info",
                         nargs="*",
-                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime", 'filename'],
+                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime", "filename"],
                         help="info to put on each image")
     args = parser.parse_args()
     print(args)
