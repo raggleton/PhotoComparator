@@ -54,8 +54,8 @@ def determine_arrangement(n_inputs):
     return arrangement_dict[n_inputs]
 
 
-def do_image_comparison_PIL(images, box, output, info=None):
-    """Put together thsame crop region from all images into one big image, 
+def do_image_comparison_PIL(images, box, output_filename, info=None):
+    """Put together thsame crop region from all images into one big image,
     together with text overlay for each image.
 
     Parameters
@@ -64,7 +64,7 @@ def do_image_comparison_PIL(images, box, output, info=None):
         Input image filenames
     box : (float, float, float, float)
         Crop region (left, upper, right, lower)
-    output : str
+    output_filename : str
         Output filename
     info : list[str], optional
         List of fields to put on each image
@@ -75,15 +75,38 @@ def do_image_comparison_PIL(images, box, output, info=None):
     # Get crop regions (with text) for each input image
     for im_filename in images:
         with PIL.Image.open(im_filename) as img:
+            img_w, img_h = img.size
+
+            exif = {
+                PIL.ExifTags.TAGS[k]: v
+                for k, v in img._getexif().items()
+                if k in PIL.ExifTags.TAGS
+            }
+
+            if info and "focus" in info:
+                # Add focus point before cropping to avoid figuring it out after cropping (lazy)
+                # Uses external ExifTool as Pillow can't handle it
+                cmd = "exiftool -FlexibleSpotPosition %s" % im_filename
+                cmd_output = subprocess.check_output(cmd, shell=True)
+                cmd_output = cmd_output.decode().strip()  # TODO make this py2 compatible, bleurgh
+                if "Flexible Spot Position" in cmd_output:
+                    # Values aren't proper coordinates - needs scaling
+                    # Here I already know that (320, 240) is the middle for a 6000*4000
+                    # image from A6000.
+                    # No idea how to handle anything else
+                    parts = cmd_output.split()
+                    pos_x, pos_y = float(parts[-2])*(3000/320), float(parts[-1])*(2000/240)
+                    draw = PIL.ImageDraw.Draw(img)
+                    xlen = crop_h/40
+                    xcol = 'red'
+                    xw = int(xlen/5)
+                    draw.line([(pos_x-xlen, pos_y-xlen), (pos_x+xlen, pos_y+xlen)], fill=xcol, width=xw)
+                    draw.line([(pos_x-xlen, pos_y+xlen), (pos_x+xlen, pos_y-xlen)], fill=xcol, width=xw)
+
             region = img.crop(box)
 
-            # Add text
+            # Add text overlay
             if info:
-                exif = {
-                    PIL.ExifTags.TAGS[k]: v
-                    for k, v in img._getexif().items()
-                    if k in PIL.ExifTags.TAGS
-                }
                 # for k,v in exif.items():
                 #     print(k, v, type(v))
                     # ExposureTime (1, 125)
@@ -121,6 +144,8 @@ def do_image_comparison_PIL(images, box, output, info=None):
                         text = exif['DateTime']
                     elif this_info == "filename":
                         text = im_filename
+                    else:
+                        continue
 
                     # Make spacing, border size scale to canvas height
                     text_start_h = 10
@@ -159,8 +184,8 @@ def do_image_comparison_PIL(images, box, output, info=None):
         out_img.paste(reg, loc)
 
     # Save to file
-    out_img.save(output, quality=90)
-    print("Saved to", output)
+    out_img.save(output_filename, quality=90)
+    print("Saved to", output_filename)
 
 
 def do_image_comparison_wand(images, box, output, info):
@@ -193,7 +218,7 @@ if __name__ == "__main__":
                         help="Output file")
     parser.add_argument("-info",
                         nargs="*",
-                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime", "filename"],
+                        choices=["fstop", "focallength", "shutterspeed", "iso", "lens", "camera", "datetime", "filename", "focus"],
                         help="info to put on each image")
     args = parser.parse_args()
     print(args)
@@ -212,7 +237,7 @@ if __name__ == "__main__":
     box = (start_w, start_h, start_w+crop_w, start_h+crop_h)
 
     pil_output = os.path.splitext(args.output)[0]+"_pil.jpg"
-    do_image_comparison_PIL(images=args.input, box=box, output=pil_output, info=args.info)
+    do_image_comparison_PIL(images=args.input, box=box, output_filename=pil_output, info=args.info)
 
     wand_output = os.path.splitext(args.output)[0]+"_wand.jpg"
     # do_image_comparison_wand(images=args.input, box=box, output=wand_output, info=args.info)

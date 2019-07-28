@@ -9,6 +9,7 @@ Useful to compare e.g. different lenses, apertures, ISOs.
 - Pillow python library: `pip install Pillow`
 
 (Or should I use `wand`)?
+- ExifTool (https://sno.phy.queensu.ca/~phil/exiftool/). On Mac with homebrew: `brew install exiftool`
 
 ## Running
 
